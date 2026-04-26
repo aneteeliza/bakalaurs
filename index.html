@@ -218,7 +218,12 @@ timeline.push({
     <input name="age" type="number" required />
   `,
   on_finish: function(data){
-  const response = JSON.parse(data.response);
+  let response = data.response;
+
+  if (typeof response === "string") {
+    response = JSON.parse(response);
+  }
+
   const age = parseInt(response.age);
 
   jsPsych.data.addProperties({ age: age });
