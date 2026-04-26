@@ -35,6 +35,7 @@
 <script src="https://unpkg.com/jspsych@6.3.1/jspsych.js"></script>
 <script src="https://unpkg.com/jspsych@6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
 <script src="https://unpkg.com/jspsych@6.3.1/plugins/jspsych-survey-text.js"></script>
+<script src="https://unpkg.com/jspsych@6.3.1/plugins/jspsych-survey-html-form.js"></script>
 
 <script>
 
@@ -211,36 +212,15 @@ function saveData() {
 let timeline = [];
 
 timeline.push({
-  type: "survey-text",
-  questions: [
-    {
-      prompt: "Cik Tev ir gadi?",
-      placeholder: "Ievadi vecumu",
-      rows: 1,
-      columns: 5,
-      required: true
-    }
-  ],
-  button_label: "Turpināt",
+  type: "survey-html-form",
+  html: `
+    <p>Cik Tev ir gadi?</p>
+    <input name="age" type="number" required />
+  `,
   on_finish: function(data){
-  let age = null;
-
-  if (data.responses) {
-    const obj = JSON.parse(data.responses);
-    age = parseInt(obj.Q0);
+    const age = parseInt(data.response.age);
+    jsPsych.data.addProperties({ age: age });
   }
-
-  jsPsych.data.addProperties({
-    age: isNaN(age) ? null : age
-  });
-}
-});
-
-timeline.push({
-  type: "html-keyboard-response",
-  stimulus: "<p>Vecums saglabāts. Spied SPACE, lai turpinātu.</p>",
-  choices: [" "],
-  data: {ignore: true}
 });
 
 timeline.push({
