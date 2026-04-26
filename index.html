@@ -210,7 +210,7 @@ function saveData() {
 
 let timeline = [];
 
-  timeline.push({
+timeline.push({
   type: "survey-text",
   questions: [
     {
@@ -227,9 +227,16 @@ let timeline = [];
     const age = parseInt(response.Q0);
 
     jsPsych.data.addProperties({
-      age: age
+      age: isNaN(age) ? null : age
     });
   }
+});
+
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: "<p>Vecums saglabāts. Spied SPACE, lai turpinātu.</p>",
+  choices: [" "],
+  data: {ignore: true}
 });
 
 timeline.push({
