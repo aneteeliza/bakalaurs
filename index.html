@@ -223,13 +223,17 @@ timeline.push({
   ],
   button_label: "Turpināt",
   on_finish: function(data){
-    const response = JSON.parse(data.responses);
-    const age = parseInt(response.Q0);
+  let age = null;
 
-    jsPsych.data.addProperties({
-      age: isNaN(age) ? null : age
-    });
+  if (data.responses) {
+    const obj = JSON.parse(data.responses);
+    age = parseInt(obj.Q0);
   }
+
+  jsPsych.data.addProperties({
+    age: isNaN(age) ? null : age
+  });
+}
 });
 
 timeline.push({
