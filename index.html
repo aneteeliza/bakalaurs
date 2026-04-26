@@ -1,3 +1,4 @@
+<script src="https://unpkg.com/jspsych@6.3.1/plugins/jspsych-survey-text.js"></script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -173,6 +174,7 @@ function saveData() {
     "participant_id",
     "timestamp",
     "device",
+    "age",
     "block",
     "trial",
     "condition",
@@ -205,6 +207,27 @@ function saveData() {
     console.error("Error sending data:", error);
   });
 }
+  timeline.push({
+  type: "survey-text",
+  questions: [
+    {
+      prompt: "Cik Tev ir gadi?",
+      placeholder: "Ievadi savu vecumu",
+      rows: 1,
+      columns: 5,
+      required: true
+    }
+  ],
+  button_label: "Turpināt",
+  on_finish: function(data){
+    const response = JSON.parse(data.responses);
+    const age = response.Q0;
+
+    jsPsych.data.addProperties({
+      age: age
+    });
+  }
+});
 
 let timeline = [];
 
