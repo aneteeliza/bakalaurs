@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Navon Task - jsPsych</title>
   <link href="https://unpkg.com/jspsych@6.3.1/css/jspsych.css" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="index.css">
   <style>
     body {
       background-color: black;
@@ -118,7 +119,12 @@ function generateNavonHTML(global_letter, local_letter){
 function createTrials(block_type, n_trials, fixed_task=null){
   const trials = [];
   for(let i=0;i<n_trials;i++){
-    let task = fixed_task || (block_type==="mixed" ? (Math.random()<0.5?"global":"local") : fixed_task);
+    let task;
+    if (block_type === "mixed") {
+      task = Math.random() < 0.5 ? "global" : "local";
+    } else {
+      task = fixed_task ?? block_type;
+    }
     let condition = Math.random()<0.5 ? "congruent" : "incongruent";
     let global_letter, local_letter;
 
@@ -155,11 +161,15 @@ function createTrials(block_type, n_trials, fixed_task=null){
         local_letter: local_letter
       },
       on_finish: function(data){
-  const correctAnswer = (data.task === "global") ? data.global_letter.toLowerCase() : data.local_letter.toLowerCase();
-  
-  if (data.response === null) {
-    data.correct = 0;   
-    data.response = "";  
+
+  const correctAnswer =
+    (data.task === "global")
+      ? data.global_letter?.toLowerCase()
+      : data.local_letter?.toLowerCase();
+
+  if (!data.response) {
+    data.correct = 0;
+    data.response = "";
   } else {
     data.correct = (data.response.toLowerCase() === correctAnswer) ? 1 : 0;
   }
@@ -212,45 +222,160 @@ function saveData() {
 let timeline = [];
 
 timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2>Sveiki!</h2>
+
+      <p>Šis ir uzmanības un reakcijas laika eksperiments (Neivona uzdevums).</p>
+      <p>Tavs uzdevums būs atbildēt pēc iespējas ātrāk un precīzāk.</p>
+      <p>Dažos blokos jāfokusējas uz lielajiem burtiem, citos uz mazajiem.</p>
+
+      <div class="hint">Nospied SPACE, lai turpinātu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: { ignore: true }
+});
+
+timeline.push({
   type: "survey-html-form",
   html: `
     <p>Cik Tev ir gadi?</p>
-    <input name="age" type="number" required />
+    <input name="age" type="number" min="1" max="99" required />
   `,
+  button_label: "Turpināt",
   on_finish: function(data){
-  let response = data.response;
-
-  if (typeof response === "string") {
-    response = JSON.parse(response);
-  }
-
+  const response = data.response;
   const age = parseInt(response.age);
 
-  jsPsych.data.addProperties({ age: age });
+  if (!isNaN(age) && age > 0) {
+    jsPsych.data.addProperties({ age: age });
+  }
 }
 });
 
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
+  <div class="card">
     <h2>Neivona uzdevums</h2>
     <p>Vēro burtus, kas parādīsies uz ekrāna.</p>
     <p>Spied H, ja redzi H, ja S, tad S</p>
     <p>Atbildes jāsniedz ātri, jo limits ir 1,5 sekundes.</p>
-    <p>Nospied SPACE, lai sāktu eksperimentu.</p>
+    <div class="hint">Nospied SPACE, lai sāktu eksperimentu</div>
+    </div>
   `,
   choices: [" "],
   data: {ignore:true}
 });
 
+function createPracticeBlock(blockName, nTrials){
+  return createTrials(blockName, nTrials, blockName).map(t => ({
+    ...t,
+    data: {
+      ...t.data,
+      practice: true
+    },
+    on_finish: function(data){
+
+  const correctAnswer =
+    (data.task === "global")
+      ? data.global_letter?.toLowerCase()
+      : data.local_letter?.toLowerCase();
+
+  if (!data.response) {
+    data.correct = 0;
+    data.response = "";
+  } else {
+    data.correct =
+      (data.response.toLowerCase() === correctAnswer) ? 1 : 0;
+  }
+}
+  }));
+}
+
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
+    <div class="card">
+      <h2>Treniņš</h2>
+      <p>Mēs sāksim ar īsu izmēģinājumu katram uzdevuma tipam.</p>
+      <p>Nospied SPACE, lai sāktu.</p>
+    </div>
+  `,
+  choices: [" "],
+  data: { ignore: true }
+});
+
+// GLOBAL terniņš
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: "<h3>Treniņš: Globālais bloks</h3><p>Fokusējies uz LIELAJIEM burtiem.</p><p>SPACE lai sāktu</p>",
+  choices: [" "],
+  data: { ignore: true }
+});
+timeline.push(...createPracticeBlock("global", 4));
+
+// LOCAL treniņš
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: "<h3>Treniņš: Lokālais bloks</h3><p>Fokusējies uz MAZAJIEM burtiem.</p><p>SPACE lai sāktu</p>",
+  choices: [" "],
+  data: { ignore: true }
+});
+timeline.push(...createPracticeBlock("local", 4));
+
+// MIXED treniņš
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: "<h3>Treniņš: Mixed bloks</h3><p>↑ = globālais, ↓ = lokālais</p><p>SPACE lai sāktu</p>",
+  choices: [" "],
+  data: { ignore: true }
+});
+timeline.push(...createPracticeBlock("mixed", 6));
+
+function getPracticeAccuracy(block){
+  const d = jsPsych.data.get().filter({practice: true, block: block});
+  return d.count() === 0 ? 0 : d.select("correct").mean();
+}
+
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: function(){
+
+    const g = getPracticeAccuracy("global");
+    const l = getPracticeAccuracy("local");
+    const m = getPracticeAccuracy("mixed");
+
+    return `
+      <div class="card">
+        <h2>Treniņa rezultāti</h2>
+
+        <p>Globālais: ${(g*100).toFixed(0)}%</p>
+        <p>Lokālais: ${(l*100).toFixed(0)}%</p>
+        <p>Mixed: ${(m*100).toFixed(0)}%</p>
+
+        <hr>
+
+        <p>Nospied SPACE, lai turpinātu</p>
+      </div>
+    `;
+  },
+  choices: [" "],
+  data: { ignore: true }
+});
+
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+  <div class="card">
     <h2>Globālais bloks</h2>
     <p>Fokusējies uz LIELAJIEM burtiem.</p>
     <p>Ignorē mazos burtiņus.</p>
     <p>Spied H, ja redzi H, ja S, tad S</p>
-    <p>Nospied SPACE, lai sāktu.</p>
+    <div class="hint">Nospied SPACE, lai sāktu</div>
+    </div>
   `,
   choices: [" "],
   data: {ignore:true}
@@ -260,11 +385,13 @@ timeline.push(...createTrials("global", N_TRIALS_GLOBAL, "global"));
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
+  <div class="card">
     <h2>Lokālais bloks</h2>
     <p>Fokusējies uz MAZAJIEM burtiem.</p>
     <p>Ignorē lielos burtiņus.</p>
     <p>Spied H, ja redzi H, ja S, tad S</p>
-    <p>Nospied SPACE, lai sāktu.</p>
+    <div class="hint">Nospied SPACE, lai sāktu</div>
+    </div>
   `,
   choices: [" "],
   data: {ignore:true}
@@ -274,12 +401,14 @@ timeline.push(...createTrials("local", N_TRIALS_LOCAL, "local"));
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
+  <div class="card">
     <h2>Mix bloks</h2>
     <p>Pirms katra uzdevuma ir bultiņa:</p>
     <p>↑ - fokusējies uz globālo (lielo) burtu</p>
     <p>↓ - fokusējies uz lokālo (mazo) burtu</p>
     <p>Spied H, ja redzi H, ja S, tad S</p>
-    <p>Nospied SPACE, lai sāktu.</p>
+    <div class="hint">Nospied SPACE, lai sāktu</div>
+    </div>
   `,
   choices: [" "],
   data: {ignore:true}
@@ -290,7 +419,7 @@ timeline.push({
   type: "html-keyboard-response",
   stimulus: function () {
     const trials = jsPsych.data.get()
-      .filterCustom(d => d.trial_type === "html-keyboard-response" && !d.ignore && d.block);
+      .filterCustom(d => d.trial_type === "html-keyboard-response" && !d.ignore && d.block && !d.practice);
 
     function blockAccuracy(blockName) {
       const blockTrials = trials.filter({ block: blockName });
@@ -304,12 +433,14 @@ timeline.push({
     const meanRT = Math.round(trials.filter({ correct: 1 }).select("rt").mean());
 
     return `
+    <div class="card">
       <h2>Paldies par dalību!</h2>
       <h3>Precizitāte pa blokiem</h3>
       <p><strong>Globālais bloks:</strong> ${globalAcc}</p>
       <p><strong>Lokālais bloks:</strong> ${localAcc}</p>
       <p><strong>Mixed bloks:</strong> ${mixedAcc}</p>
       <p style="margin-top:15px;"><strong>Vidējais reakcijas laiks:</strong> ${meanRT} ms</p>
+      </div>
     `;
   },
   on_load: function() {
