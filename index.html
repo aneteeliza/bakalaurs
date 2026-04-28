@@ -312,7 +312,7 @@ timeline.push({
 // GLOBAL terniņš
 timeline.push({
   type: "html-keyboard-response",
-  stimulus: "<h3>Treniņš: Globālais bloks</h3><p>Fokusējies uz LIELAJIEM burtiem.</p><p>SPACE lai sāktu</p>",
+  stimulus: "<h3>Treniņš: Globālais bloks</h3><p>Fokusējies uz LIELAJIEM burtiem.</p><p>SPACE, lai sāktu</p>",
   choices: [" "],
   data: { ignore: true }
 });
@@ -321,7 +321,7 @@ timeline.push(...createPracticeBlock("global", 4));
 // LOCAL treniņš
 timeline.push({
   type: "html-keyboard-response",
-  stimulus: "<h3>Treniņš: Lokālais bloks</h3><p>Fokusējies uz MAZAJIEM burtiem.</p><p>SPACE lai sāktu</p>",
+  stimulus: "<h3>Treniņš: Lokālais bloks</h3><p>Fokusējies uz MAZAJIEM burtiem.</p><p>SPACE, lai sāktu</p>",
   choices: [" "],
   data: { ignore: true }
 });
@@ -330,7 +330,7 @@ timeline.push(...createPracticeBlock("local", 4));
 // MIXED treniņš
 timeline.push({
   type: "html-keyboard-response",
-  stimulus: "<h3>Treniņš: Mixed bloks</h3><p>↑ = globālais, ↓ = lokālais</p><p>SPACE lai sāktu</p>",
+  stimulus: "<h3>Treniņš: Jauktais bloks</h3><p>↑ = globālais, ↓ = lokālais</p><p>SPACE, lai sāktu</p>",
   choices: [" "],
   data: { ignore: true }
 });
@@ -355,11 +355,11 @@ timeline.push({
 
         <p>Globālais: ${(g*100).toFixed(0)}%</p>
         <p>Lokālais: ${(l*100).toFixed(0)}%</p>
-        <p>Mixed: ${(m*100).toFixed(0)}%</p>
+        <p>Jauktais: ${(m*100).toFixed(0)}%</p>
 
         <hr>
 
-        <p>Nospied SPACE, lai turpinātu</p>
+        <p class="hint">Nospied SPACE, lai turpinātu ar eksperimenta galveno daļu</p>
       </div>
     `;
   },
@@ -403,7 +403,7 @@ timeline.push({
   type: "html-keyboard-response",
   stimulus: `
   <div class="card">
-    <h2>Mix bloks</h2>
+    <h2>Jauktais bloks</h2>
     <p>Pirms katra uzdevuma ir bultiņa:</p>
     <p>↑ - fokusējies uz globālo (lielo) burtu</p>
     <p>↓ - fokusējies uz lokālo (mazo) burtu</p>
@@ -435,11 +435,11 @@ timeline.push({
 
     return `
     <div class="card">
-      <h2>Paldies par dalību!</h2>
+      <h2 class="hint">Paldies par dalību!</h2>
       <h3>Precizitāte pa blokiem</h3>
       <p><strong>Globālais bloks:</strong> ${globalAcc}</p>
       <p><strong>Lokālais bloks:</strong> ${localAcc}</p>
-      <p><strong>Mixed bloks:</strong> ${mixedAcc}</p>
+      <p><strong>Jauktais bloks:</strong> ${mixedAcc}</p>
       <p style="margin-top:15px;"><strong>Vidējais reakcijas laiks:</strong> ${meanRT} ms</p>
       </div>
     `;
