@@ -508,53 +508,53 @@ timeline.push({
     <div class="card">
       <p>Kāds ir Tavs pašreizējais nodarbošanās statuss?</p>
 
-      <select name="employment_status" required>
+      <select name="employment_status" id="employment_status" required>
         <option value="">Izvēlies</option>
         <option value="employed">Strādā algotu darbu</option>
         <option value="self">Pašnodarbināts / uzņēmējs</option>
-        <option value="student">Mācies / students</option>
+        <option value="student">Mācies / skolēns / students</option>
         <option value="unemployed">Meklē darbu</option>
         <option value="parental">Bērna kopšanas atvaļinājumā</option>
         <option value="retired">Pensionārs</option>
         <option value="other">Cits</option>
       </select>
+
+      <div id="industry_block" style="display:none; margin-top:15px;">
+        <p>Kādā nozarē Tu darbojies? (Ja pašlaik strādā vai esi strādājis tajā</p>
+
+        <select name="industry">
+          <option value="">Izvēlies</option>
+          <option value="it">IT</option>
+          <option value="education">Izglītība</option>
+          <option value="services">Pakalpojumi</option>
+          <option value="healthcare">Veselības aprūpe</option>
+          <option value="other">Cits</option>
+        </select>
+      </div>
     </div>
   `,
   button_label: "Turpināt",
+
+  on_load: function () {
+    const select = document.getElementById("employment_status");
+    const industryBlock = document.getElementById("industry_block");
+
+    select.addEventListener("change", function () {
+      if (this.value === "employed" || this.value === "self") {
+        industryBlock.style.display = "block";
+      } else {
+        industryBlock.style.display = "none";
+      }
+    });
+  },
+
   on_finish: function(data){
     jsPsych.data.addProperties({
-      employment_status: data.response.employment_status
+      employment_status: data.response.employment_status,
+      industry: data.response.industry || null
     });
   }
 });
-
-timeline.push({ 
-  timeline: [{ 
-    type: "survey-html-form", 
-    html: 
-    <div class="card"> 
-      <p>Kādā nozarē Tu darbojies?</p> 
-      <select name="industry"> 
-        <option value="">Izvēlies</option> 
-        <option value="it">IT</option> 
-        <option value="education">Izglītība</option> 
-        <option value="services">Pakalpojumi</option> 
-        <option value="healthcare">Veselības aprūpe</option> 
-        <option value="other">Cits</option> </select> 
-        </div> , 
-        button_label: "Turpināt", 
-        on_finish: function(data){ 
-          jsPsych.data.addProperties({ 
-            industry: data.response.industry 
-          }); 
-        } 
-      }], 
-      conditional_function: 
-      function(){ 
-        const status = jsPsych.data.get().last(1).values()[0].employment_status; 
-        return status === "employed" || status === "self"; 
-      } 
-    });
 
 timeline.push({
   type: "survey-html-form",
