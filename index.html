@@ -528,32 +528,34 @@ timeline.push({
   }
 });
 
-timeline.push({
-  type: "survey-html-form",
-  html: `
-    <div class="card">
-      <p>Kādā nozarē Tu darbojies?</p>
-
-      <select name="industry">
-        <option value="">Izvēlies</option>
-        <option value="it">IT</option>
-        <option value="education">Izglītība</option>
-        <option value="manufacturing">Ražošana</option>
-        <option value="services">Pakalpojumi</option>
-        <option value="healthcare">Veselības aprūpe</option>
-        <option value="public">Valsts sektors</option>
-        <option value="other">Cits</option>
-        <option value="other">Šis jautājums uz mani neattiecas</option>
-      </select>
-    </div>
-  `,
-  button_label: "Turpināt",
-  on_finish: function(data){
-    jsPsych.data.addProperties({
-      industry: data.response.industry
+timeline.push({ 
+  timeline: [{ 
+    type: "survey-html-form", 
+    html: 
+    <div class="card"> 
+      <p>Kādā nozarē Tu darbojies?</p> 
+      <select name="industry"> 
+        <option value="">Izvēlies</option> 
+        <option value="it">IT</option> 
+        <option value="education">Izglītība</option> 
+        <option value="services">Pakalpojumi</option> 
+        <option value="healthcare">Veselības aprūpe</option> 
+        <option value="other">Cits</option> </select> 
+        </div> , 
+        button_label: "Turpināt", 
+        on_finish: function(data){ 
+          jsPsych.data.addProperties({ 
+            industry: data.response.industry 
+          }); 
+        } 
+      }], 
+      conditional_function: 
+      function(){ 
+        const status = jsPsych.data.get().last(1).values()[0].employment_status; 
+        return status === "employed" || status === "self"; 
+      } 
     });
-  }
-});
+
 timeline.push({
   type: "survey-html-form",
   html: `
