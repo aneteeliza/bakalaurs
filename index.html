@@ -40,7 +40,7 @@
 
 <script>
 
-const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbw9cfv2-v2dw6Ka9VvSvStxZKOnEloAj433yCrqDg6LaIRn3j-1Nzw8F1Jms2I_p4ZT/exec";
+const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyQvsd1GhGxmiM5y-KT6iQjTFufzxE-LCGNulJPqCgl-LfSnczvkFXfeZjzHiS9CMtK/exec";
 
 function generateParticipantID() {
   return "NAVON-" + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -554,17 +554,19 @@ timeline.push({
     });
   }
 });
-
 timeline.push({
   type: "survey-html-form",
   html: `
     <div class="card">
       <p>Cik bieži Tu spēlē videospēles?</p>
-      <select name="gaming">
+
+      <select name="gaming" required>
         <option value="">Izvēlies</option>
         <option value="never">Nekad</option>
-        <option value="sometimes">Dažreiz</option>
-        <option value="often">Bieži</option>
+        <option value="rare">Ļoti reti (dažas reizes gadā vai retāk)</option>
+        <option value="sometimes">Reizēm (dažas reizes mēnesī)</option>
+        <option value="often">Bieži (katru nedēļu vai biežāk)</option>
+        <option value="very_often">Ļoti bieži (gandrīz katru dienu)</option>
       </select>
     </div>
   `,
