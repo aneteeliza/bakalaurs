@@ -67,7 +67,12 @@ jsPsych.data.addProperties({
 const N_TRIALS_GLOBAL = 20;
 const N_TRIALS_LOCAL  = 20;
 const N_TRIALS_MIXED  = 40;
-const GLOBAL_LETTERS = ["H", "S"];
+const GLOBAL_LETTERS_SET_1 = ["H", "S"];
+const GLOBAL_LETTERS_SET_2 = ["2", "3"];
+const LETTER_SETS = {
+  letters: ["H", "S"],
+  numbers: ["2", "3"]
+};
 const GRID_SIZE = 9;
 
 const TEMPLATES = {
@@ -92,7 +97,29 @@ const TEMPLATES = {
     [0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,1],
     [0,1,1,1,1,1,1,1,0]
-  ]
+  ],
+  "2":[
+  [0,1,1,1,1,1,1,1,0],
+  [1,0,0,0,0,0,0,0,1],
+  [0,0,0,0,0,0,0,1,0],
+  [0,0,0,0,0,1,0,0,0],
+  [0,0,0,0,1,0,0,0,0],
+  [0,0,0,1,0,0,0,0,0],
+  [0,0,1,0,0,0,0,0,0],
+  [1,0,0,0,0,0,0,0,0],
+  [1,1,1,1,1,1,1,1,1]
+],
+"3":[
+  [0,1,1,1,1,1,1,0,0],
+  [1,0,0,0,0,0,0,1,0],
+  [0,0,0,0,0,0,0,0,1],
+  [0,0,0,0,0,0,0,0,1],
+  [0,0,0,0,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,1],
+  [0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1,0],
+  [0,1,1,1,1,1,1,0,0]
+]
 };
 
 function generateNavonHTML(global_letter, local_letter){
@@ -116,22 +143,26 @@ function generateNavonHTML(global_letter, local_letter){
   return html;
 }
 
-function createTrials(block_type, n_trials, fixed_task=null){
+function createTrials(block_type, n_trials, fixed_task=null, letter_set){
+
   const trials = [];
+
   for(let i=0;i<n_trials;i++){
+
     let task;
     if (block_type === "mixed") {
       task = Math.random() < 0.5 ? "global" : "local";
     } else {
       task = fixed_task ?? block_type;
     }
+
     let condition = Math.random()<0.5 ? "congruent" : "incongruent";
     let global_letter, local_letter;
 
     if(condition==="congruent"){
-      global_letter = local_letter = GLOBAL_LETTERS[Math.floor(Math.random()*2)];
+      global_letter = local_letter = letter_set[Math.floor(Math.random()*2)];
     } else {
-      const shuffled = [...GLOBAL_LETTERS].sort(()=>Math.random()-0.5);
+      const shuffled = [...letter_set].sort(()=>Math.random()-0.5);
       global_letter = shuffled[0];
       local_letter  = shuffled[1];
     }
@@ -150,8 +181,9 @@ function createTrials(block_type, n_trials, fixed_task=null){
     trials.push({
       type: "html-keyboard-response",
       stimulus: generateNavonHTML(global_letter, local_letter),
-      choices: ["h","s"],
+      choices: letter_set.map(l => l.toLowerCase()),
       trial_duration: 1500,
+
       data: {
         block: block_type,
         trial: i+1,
@@ -160,23 +192,24 @@ function createTrials(block_type, n_trials, fixed_task=null){
         global_letter: global_letter,
         local_letter: local_letter
       },
+
       on_finish: function(data){
+        const correctAnswer =
+          (data.task === "global")
+            ? data.global_letter?.toLowerCase()
+            : data.local_letter?.toLowerCase();
 
-  const correctAnswer =
-    (data.task === "global")
-      ? data.global_letter?.toLowerCase()
-      : data.local_letter?.toLowerCase();
-
-  if (!data.response) {
-    data.correct = 0;
-    data.response = "";
-  } else {
-    data.correct = (data.response.toLowerCase() === correctAnswer) ? 1 : 0;
-  }
-}
-
+        if (!data.response) {
+          data.correct = 0;
+          data.response = "";
+        } else {
+          data.correct =
+            (data.response.toLowerCase() === correctAnswer) ? 1 : 0;
+        }
+      }
     });
   }
+
   return trials;
 }
 
@@ -208,7 +241,11 @@ function saveData() {
   ];
 
   const rows = jsPsych.data.get()
-          .filterCustom(d => d.trial_type === "html-keyboard-response" && !d.ignore)
+          .filterCustom(d => 
+            d.trial_type === "html-keyboard-response" &&
+            !d.ignore &&
+            !d.practice
+          )
           .values()
           .map(r => {
             let obj = {};
@@ -241,7 +278,7 @@ timeline.push({
 
       <p>Tavs uzdevums būs reaģēt pēc iespējas ātrāk un precīzāk uz redzamajiem stimuliem.</p>
 
-      <p>Dažos blokos Tev būs jākoncentrējas uz lielo burtu, citos - uz mazajiem burtiem.</p>
+      <p>Dažos blokos Tev būs jākoncentrējas uz lielo burtu vai ciparu, citos - uz mazajiem burtiem/cipariem.</p>
 
       <div class="hint">Nospied SPACE, lai turpinātu</div>
     </div>
@@ -256,15 +293,15 @@ timeline.push({
     <div class="card">
       <h3>Kā izskatās uzdevums?</h3>
 
-      <p>Tu redzēsi lielu burtu, kas veidots no daudziem maziem burtiem.</p>
+      <p>Tu redzēsi lielu burtu/ciparu, kas veidots no daudziem maziem burtiem/cipariem.</p>
 
-      <p><b>Lielais burts</b> = visa forma (piemēram, liels H vai S)</p>
-      <p><b>Mazie burti</b> = sīkie burtiņi, no kuriem sastāv lielais burts</p>
+      <p><b>Lielais burts/cipars</b> = visa forma (piemēram, liels H vai S)</p>
+      <p><b>Mazie burti/cipari</b> = sīkie burtiņi vai cipari, no kuriem sastāv lielais burts vai cipars</p>
 
       <hr>
 
-      <p><b>Globālais līmenis</b> = lielais burts (kopējā forma)</p>
-      <p><b>Lokālais līmenis</b> = mazie burti</p>
+      <p><b>Globālais līmenis</b> = lielais burts/cipars (kopējā forma)</p>
+      <p><b>Lokālais līmenis</b> = mazie burti/cipari</p>
 
       <div class="hint">Nospied SPACE, lai turpinātu</div>
     </div>
@@ -279,7 +316,8 @@ timeline.push({
     <div class="card">
       <h3>Tavs uzdevums</h3>
 
-      <p>Spied taustiņu <b>H</b>, ja redzi burtu H, un <b>S</b>, ja redzi burtu S.</p>
+      <p>Spied attiecīgā burta vai cipara taustiņu.</p>
+      <p>Piemēram, spied <b>H</b>, ja redzi burtu H, un <b>S</b>, ja redzi burtu S.</p>
 
       <p>Atbildi pēc iespējas ātri (maksimālais laiks: 1,5 sekundes).</p>
 
@@ -296,8 +334,8 @@ timeline.push({
   stimulus: `
   <div class="card">
     <h2>Neivona uzdevums</h2>
-    <p>Vēro burtus, kas parādīsies uz ekrāna.</p>
-    <p>Spied taustiņu <b>H</b>, ja redzi burtu H, un <b>S</b>, ja redzi burtu S.</p>
+    <p>Vēro stimulu, kas parādīsies uz ekrāna.</p>
+    <p>Spied attiecīgā burta vai cipara taustiņu uz tastatūras.</p>
     <p>Atbildes jāsniedz ātri, jo limits ir 1,5 sekundes.</p>
     <div class="hint">Nospied SPACE, lai sāktu eksperimentu</div>
     </div>
@@ -307,7 +345,7 @@ timeline.push({
 });
 
 function createPracticeBlock(blockName, nTrials){
-  return createTrials(blockName, nTrials, blockName).map(t => ({
+  return createTrials(blockName, nTrials, blockName, LETTER_SETS.letters).map(t => ({
     ...t,
     data: {
       ...t.data,
@@ -402,6 +440,7 @@ timeline.push({
   data: { ignore: true }
 });
 
+// GLOBAL ar H/S
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
@@ -416,8 +455,39 @@ timeline.push({
   choices: [" "],
   data: {ignore:true}
 });
-timeline.push(...createTrials("global", N_TRIALS_GLOBAL, "global"));
+timeline.push(...createTrials("global", N_TRIALS_GLOBAL, "global", LETTER_SETS.letters));
 
+// STIMULU MAIŅA
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2 class="hint">Uzmanību: notiek stimulu maiņa</h2>
+      <div class="hint">Nospied SPACE, lai turpinātu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: { ignore: true }
+});
+
+// GLOBAL ar 2/3
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2>Globālais bloks</h2>
+      <p>Turpmāk redzēsi ciparus <b>2</b> un <b>3</b>.</p>
+      <p>Fokusējies uz LIELAJIEM cipariem.</p>
+      <p>Spied taustiņu <b>2</b>, ja redzi 2, un <b>3</b>, ja redzi 3.</p>
+      <div class="hint">SPACE, lai sāktu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: {ignore:true}
+});
+timeline.push(...createTrials("global", N_TRIALS_GLOBAL, "global", LETTER_SETS.numbers));
+
+// LOCAL ar H/S
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
@@ -432,8 +502,40 @@ timeline.push({
   choices: [" "],
   data: {ignore:true}
 });
-timeline.push(...createTrials("local", N_TRIALS_LOCAL, "local"));
+timeline.push(...createTrials("local", N_TRIALS_LOCAL, "local", LETTER_SETS.letters));
 
+// STIMULU MAIŅA
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2 class="hint">Uzmanību: notiek stimulu maiņa</h2>
+      <div class="hint">Nospied SPACE, lai turpinātu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: { ignore: true }
+});
+
+// LOCAL ar 2/3
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2>Lokālais bloks</h2>
+      <p>Fokusējies uz MAZAJIEM cipariem.</p>
+      <p>Spied taustiņu <b>2</b>, ja redzi 2, un <b>3</b>, ja redzi 3.</p>
+      <div class="hint">SPACE, lai sāktu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: {ignore:true}
+});
+
+timeline.push(...createTrials("local", N_TRIALS_LOCAL, "local", LETTER_SETS.numbers));
+
+
+// MIX ar H/S
 timeline.push({
   type: "html-keyboard-response",
   stimulus: `
@@ -449,7 +551,37 @@ timeline.push({
   choices: [" "],
   data: {ignore:true}
 });
-timeline.push(...createTrials("mixed", N_TRIALS_MIXED));
+timeline.push(...createTrials("mixed", N_TRIALS_MIXED, null, LETTER_SETS.letters));
+
+// STIMULU MAIŅA
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2 class="hint">Uzmanību: notiek stimulu maiņa</h2>
+      <div class="hint">Nospied SPACE, lai turpinātu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: { ignore: true }
+});
+
+// MIX ar 2/3
+timeline.push({
+  type: "html-keyboard-response",
+  stimulus: `
+    <div class="card">
+      <h2>Jauktais bloks</h2>
+      <p>↑ globālais, ↓ lokālais</p>
+      <p>Spied taustiņu <b>2</b>, ja redzi 2, un <b>3</b>, ja redzi 3.</p>
+      <div class="hint">SPACE, lai sāktu</div>
+    </div>
+  `,
+  choices: [" "],
+  data: {ignore:true}
+});
+
+timeline.push(...createTrials("mixed", N_TRIALS_MIXED, null, LETTER_SETS.numbers));
 
 timeline.push({
   type: "html-keyboard-response",
